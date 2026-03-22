@@ -1,98 +1,175 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useState, useEffect } from 'react'
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Platform } from 'react-native'
+import { useRouter } from 'expo-router'
+import { collection, getDocs, query, orderBy } from 'firebase/firestore'
+import { db } from '@/config/firebase'
+import { useAuth } from '@/context/AuthContext'
+import Colors from '@/constants/Colors'
+import PropertyCard from '@/components/PropertyCard'
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const PROPERTY_TYPES = ['All', 'PG', 'Flat', 'Room', '1BHK', '2BHK']
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter()
+  const { user } = useAuth()
+  const [listings, setListings] = useState<any[]>([])
+  const [filtered, setFiltered] = useState<any[]>([])
+  const [searchText, setSearchText] = useState('')
+  const [selectedType, setSelectedType] = useState('All')
+  const [bachelorOnly, setBachelorOnly] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+  useEffect(() => {
+    fetchListings()
+  }, [])
+
+  // refilter whenever filters change
+  useEffect(() => {
+    filterListings()
+  }, [searchText, selectedType, bachelorOnly, listings])
+
+  async function fetchListings() {
+    try {
+      const q = query(collection(db, 'listings'), orderBy('createdAt', 'desc'))
+      const snapshot = await getDocs(q)
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      setListings(data)
+    } catch (err) {
+      console.log('Error fetching listings:', err)
+    }
+    setLoading(false)
+  }
+
+  function filterListings() {
+    let result = [...listings]
+
+    // search by text
+    if (searchText.trim()) {
+      const search = searchText.toLowerCase()
+      result = result.filter(item =>
+        item.title?.toLowerCase().includes(search) ||
+        item.location?.toLowerCase().includes(search) ||
+        item.area?.toLowerCase().includes(search)
+      )
+    }
+
+    // filter by type
+    if (selectedType !== 'All') {
+      result = result.filter(item => item.type === selectedType)
+    }
+
+    // bachelor only filter
+    if (bachelorOnly) {
+      result = result.filter(item => item.bachelorFriendly === true)
+    }
+
+    setFiltered(result)
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Hey, {user?.displayName || 'there'} 👋</Text>
+          <Text style={styles.headerSubtitle}>Find your perfect pad</Text>
+        </View>
+        <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/add-listing')}>
+          <Text style={styles.addBtnText}>+ Post</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* search */}
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by location, area..."
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholderTextColor={Colors.textLight}
+        />
+      </View>
+
+      {/* filters */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContainer}>
+        {PROPERTY_TYPES.map(type => (
+          <TouchableOpacity
+            key={type}
+            style={[styles.filterChip, selectedType === type && styles.filterChipActive]}
+            onPress={() => setSelectedType(type)}
+          >
+            <Text style={[styles.filterText, selectedType === type && styles.filterTextActive]}>{type}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity
+          style={[styles.filterChip, bachelorOnly && { backgroundColor: Colors.bachelor }]}
+          onPress={() => setBachelorOnly(!bachelorOnly)}
+        >
+          <Text style={[styles.filterText, bachelorOnly && styles.filterTextActive]}>Bachelor ✓</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* listings */}
+      {loading ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Loading listings...</Text>
+        </View>
+      ) : filtered.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={{ fontSize: 50, marginBottom: 10 }}>🏘️</Text>
+          <Text style={styles.emptyText}>No listings found</Text>
+          <Text style={styles.emptySubtext}>
+            {listings.length === 0 ? 'Be the first to post a listing!' : 'Try changing your filters'}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <PropertyCard property={item} onPress={() => router.push(`/property/${item.id}`)} />
+          )}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+    </SafeAreaView>
+  )
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    ...(Platform.OS === 'web' ? { maxWidth: 800, alignSelf: 'center' as const, width: '100%' as any } : {})
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingTop: 50, paddingBottom: 10
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  greeting: { fontSize: 22, fontWeight: 'bold', color: Colors.primary },
+  headerSubtitle: { fontSize: 13, color: Colors.textLight, marginTop: 2 },
+  addBtn: { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  addBtnText: { color: Colors.textWhite, fontWeight: '600', fontSize: 13 },
+  searchRow: { paddingHorizontal: 20, marginTop: 10 },
+  searchInput: {
+    backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.border,
+    borderRadius: 10, padding: 12, fontSize: 14, color: Colors.text
   },
-});
+  filterScroll: { maxHeight: 50, marginTop: 12 },
+  filterContainer: { paddingHorizontal: 20, gap: 8 },
+  filterChip: {
+    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+    backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.border
+  },
+  filterChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  filterText: { fontSize: 13, color: Colors.text },
+  filterTextActive: { color: Colors.textWhite },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 },
+  emptyText: { fontSize: 16, color: Colors.text, fontWeight: '600' },
+  emptySubtext: { fontSize: 13, color: Colors.textLight, marginTop: 4 },
+  listContent: { padding: 20, gap: 15 },
+})
