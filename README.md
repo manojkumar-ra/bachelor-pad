@@ -1,50 +1,96 @@
-# Welcome to your Expo app 👋
+# Bachelor Pad 🏠
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+![React Native](https://img.shields.io/badge/React_Native-0.81-blue) ![Expo](https://img.shields.io/badge/Expo-54-black) ![Firebase](https://img.shields.io/badge/Firebase-12-orange) ![Google Maps](https://img.shields.io/badge/Google_Maps-integrated-green)
 
-## Get started
+A mobile app that helps bachelors find PGs, flats, and rooms easily. Built because finding bachelor-friendly housing in India is a real struggle — most landlords don't rent to bachelors, and there's no easy way to filter for it.
 
-1. Install dependencies
+## Features
 
-   ```bash
-   npm install
-   ```
+- **Bachelor-Friendly Filter** — Toggle to only see verified bachelor-friendly listings
+- **Search & Filters** — Search by location, filter by property type (PG, Flat, Room, 1BHK, 2BHK)
+- **Map View** — See all listings on Google Maps with colored markers (purple = bachelor-friendly)
+- **Property Details** — Full details with description, amenities, owner info, and photos
+- **In-App Chat** — Message property owners directly within the app (real-time with Firebase)
+- **Reviews & Ratings** — Read and write reviews for properties
+- **Favorites** — Save listings you like for later
+- **Post Listings** — Property owners can post their own listings
+- **User Authentication** — Email/password signup with owner/tenant roles
 
-2. Start the app
+## Screenshots
 
-   ```bash
-   npx expo start
-   ```
+<p align="center">
+  <img src="screenshots/welcome.png" width="200" />
+  <img src="screenshots/home.png" width="200" />
+  <img src="screenshots/property.png" width="200" />
+  <img src="screenshots/map.png" width="200" />
+</p>
 
-In the output, you'll find options to open the app in a
+## Tech Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| Technology | Purpose |
+|---|---|
+| React Native (Expo) | Cross-platform mobile app |
+| Firebase Auth | User authentication |
+| Cloud Firestore | Database for listings, chats, reviews |
+| Google Maps | Map view with location markers |
+| Expo Location | Get user's current location |
+| Expo Router | File-based navigation |
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Project Structure
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+bachelor-pad/
+├── app/
+│   ├── (tabs)/           # Tab screens (Home, Map, Messages, Profile)
+│   ├── property/[id].tsx # Property details page
+│   ├── chat/[id].tsx     # Chat screen
+│   ├── add-listing.tsx   # Post a new listing
+│   ├── login.tsx         # Login page
+│   └── signup.tsx        # Signup page
+├── components/           # Reusable components (PropertyCard, MapContent)
+├── config/               # Firebase configuration
+├── context/              # Auth context provider
+├── constants/            # Colors and theme
+├── utils/                # Helper functions
+└── scripts/              # Seed data for demo
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Getting Started
 
-## Learn more
+### Prerequisites
+- Node.js installed
+- Expo Go app on your phone (from Play Store / App Store)
+- Firebase project with Auth and Firestore enabled
 
-To learn more about developing your project with Expo, look at the following resources:
+### Setup
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. Clone the repo
+```bash
+git clone https://github.com/manojkumar-ra/bachelor-pad.git
+cd bachelor-pad
+```
 
-## Join the community
+2. Install dependencies
+```bash
+npm install
+```
 
-Join our community of developers creating universal apps.
+3. Update Firebase config in `config/firebase.ts` with your own keys
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+4. Start the app
+```bash
+npx expo start
+```
+
+5. Scan the QR code with Expo Go on your phone
+
+## Firebase Setup
+
+1. Create a project at [Firebase Console](https://console.firebase.google.com)
+2. Enable **Email/Password** and **Google** sign-in under Authentication
+3. Create a **Cloud Firestore** database in test mode
+4. Add a web app and copy the config to `config/firebase.ts`
+
+## License
+
+MIT
