@@ -20,7 +20,7 @@ A mobile app that helps bachelors find PGs, flats, and rooms easily. Built becau
 
 | Welcome | Home | Property | Map |
 |---------|------|----------|-----|
-| ![Welcome](screenshots/welcome.png) | ![Home](screenshots/home.png) | ![Property](screenshots/property.png) | ![Map](screenshots/map.png) |
+| ![Welcome](screenshots/welcome.jpeg) | ![Home](screenshots/home.jpeg) | ![Property](screenshots/property.jpeg) | ![Map](screenshots/map.jpeg) |
 
 ## Tech Stack
 
